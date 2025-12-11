@@ -1,37 +1,33 @@
-name: buildjet
+name: nix
 
 on: [push, pull_request]
 
 permissions: {}
 
 jobs:
-  buildjet:
+  nix:
     if: github.repository == 'Swatinem/rust-cache'
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-latest, macos-latest]
 
-    name: Test buildjet provider on ${{ matrix.os }}
+    name: Test Nix on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
-
-    env:
-      CARGO_TERM_COLOR: always
 
     steps:
       - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
         with:
           persist-credentials: false
 
-      - run: rustup toolchain install stable --profile minimal --no-self-update
+      - uses: cachix/install-nix-action@0b0e072294b088b73964f1d72dfdac0951439dbd # v31.8.4
 
       - uses: ./
         with:
           workspaces: tests
-          cache-provider: buildjet
+          cmd-format: nix develop ./tests -c {0}
 
       - run: |
-          cargo check
-          cargo test
-          cargo build --release
+          nix develop -c cargo check
+          nix develop -c cargo test
         working-directory: tests
